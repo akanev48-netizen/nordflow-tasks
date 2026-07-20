@@ -21,7 +21,6 @@ export default function LoginPage() {
           <img src="/logo_main.jpg" alt="NordFlow" style={{ width: 48, height: 48, borderRadius: 10, objectFit: 'cover' }} />
           <h1>NordFlow Tasks</h1>
         </div>
-        <p className="subtitle">Войдите в свой аккаунт</p>
         {error && <div className="login-error">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
