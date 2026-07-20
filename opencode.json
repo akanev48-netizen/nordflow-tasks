@@ -1,0 +1,25 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "references": {
+    "calc1": {
+      "path": "F:/Мои документы/Calculator 1",
+      "description": "Electron-калькулятор каркасного дома, вариант 1"
+    },
+    "calc2": {
+      "path": "F:/Мои документы/Calculator 2",
+      "description": "Electron-калькулятор каркасного дома, вариант 2"
+    },
+    "site-claude": {
+      "path": "F:/Мои документы/SiteClaude",
+      "description": "Сайт на HTML/CSS/JS с Google Apps Script"
+    },
+    "site1": {
+      "path": "F:/Мои документы/Site1",
+      "description": "Сайт (пустая папка)"
+    },
+    "salon": {
+      "path": "F:/Мои документы/Салон красоты",
+      "description": "Telegram-бот салона красоты"
+    }
+  }
+}

@@ -1,0 +1,352 @@
+# Дополнение к ТЗ: Этапы, форматы и стек
+
+## А. Рекомендуемый стек технологий
+
+| Компонент | Технология |
+|---|---|
+| Фронтенд | React 18+ (или Vue 3), TypeScript, Vite |
+| UI-библиотека | shadcn/ui (или Ant Design) |
+| Бэкенд | Node.js + Express (или NestJS), TypeScript |
+| База данных | PostgreSQL 15+ |
+| ORM | Prisma |
+| Авторизация | JWT (access + refresh токены) |
+| Файловое хранилище | локальная папка / S3-совместимое (MinIO для dev) |
+| Уведомления (MVP) | WebSocket (Socket.IO) |
+| Тестирование | Vitest (unit), Playwright (e2e) |
+
+---
+
+## Б. Этапы разработки (спринты по 1–2 недели)
+
+### Этап 1 — Фундамент (2 недели)
+
+- Настройка проекта (монорепо: apps/web, apps/api)
+- PostgreSQL + Prisma: схема БД (users, projects, tasks, comments, notifications)
+- Авторизация: регистрация/вход/выход, JWT, middleware проверки роли
+- CRUD пользователей (админ)
+- Базовая навигация и layout (sidebar, хедер)
+
+### Этап 2 — Проекты (1 неделя)
+
+- Создание/редактирование/архивирование проектов
+- Назначение руководителя и участников
+- Страница проекта: вкладки «Доска», «Список задач», «Участники», «Информация»
+- Kanban-доска: 5 колонок, drag-and-drop (react-beautiful-dnd или dnd-kit)
+
+### Этап 3 — Задачи (2 недели)
+
+- Создание/редактирование задачи (все поля из ТЗ §14)
+- Страница задачи с комментариями и историей изменений
+- Фильтры и поиск (по статусу, проекту, приоритету, сроку, просроченные)
+- Виды отображения: список и доска
+- Приоритеты с цветовой маркировкой
+- Визуальное выделение просроченных задач
+
+### Этап 4 — Коммуникация (1 неделя)
+
+- Комментарии к задачам (CRUD)
+- Уведомления (внутриприложенные): при назначении, изменении статуса/срока, новом комментарии, приближении дедлайна
+- WebSocket для real-time уведомлений
+
+### Этап 5 — Главная, команда, профиль (1 неделя)
+
+- Главная страница: дашборд (активные/просроченные задачи, ближайшие дедлайны, последние обновления)
+- Раздел «Команда»: список сотрудников, карточки, загрузка
+- Профиль пользователя: редактирование данных, смена пароля, тема (светлая/тёмная)
+- Глобальный поиск
+
+### Этап 6 — Адаптивность и полировка (1 неделя)
+
+- Мобильная версия: гамбургер-меню, одностраничные карточки, fullscreen-формы
+- Демо-данные: 8 пользователей, 3 проекта, 25+ задач
+- Тестирование основных сценариев
+- Исправление багов
+
+---
+
+## В. Формат API (REST, JSON)
+
+Базовый URL: `/api/v1`
+
+### Авторизация
+
+| Метод | Эндпоинт | Тело запроса | Ответ |
+|---|---|---|---|
+| POST | /auth/login | `{ email, password }` | `{ accessToken, refreshToken }` |
+| POST | /auth/refresh | `{ refreshToken }` | `{ accessToken }` |
+| POST | /auth/logout | — | — |
+
+### Пользователи (admin)
+
+| Метод | Эндпоинт | Описание |
+|---|---|---|
+| GET | /users | Список пользователей |
+| POST | /users | Создать пользователя |
+| PATCH | /users/:id | Обновить пользователя |
+| DELETE | /users/:id | Удалить пользователя |
+
+### Проекты
+
+| Метод | Эндпоинт | Описание |
+|---|---|---|
+| GET | /projects | Список проектов (фильтр по доступу) |
+| POST | /projects | Создать проект (admin) |
+| GET | /projects/:id | Детали проекта |
+| PATCH | /projects/:id | Обновить проект |
+| DELETE | /projects/:id | Архивировать проект |
+| POST | /projects/:id/members | Добавить участника |
+| DELETE | /projects/:id/members/:userId | Удалить участника |
+
+### Задачи
+
+| Метод | Эндпоинт | Описание |
+|---|---|---|
+| GET | /projects/:projectId/tasks | Список задач (фильтры: status, priority, assignee, overdue, search) |
+| POST | /projects/:projectId/tasks | Создать задачу |
+| GET | /tasks/:id | Детали задачи (комментарии + история) |
+| PATCH | /tasks/:id | Обновить задачу |
+| PATCH | /tasks/:id/status | Сменить статус (drag-and-drop) |
+| DELETE | /tasks/:id | Удалить задачу |
+
+### Комментарии
+
+| Метод | Эндпоинт | Описание |
+|---|---|---|
+| GET | /tasks/:taskId/comments | Список комментариев |
+| POST | /tasks/:taskId/comments | Добавить комментарий |
+| PATCH | /comments/:id | Редактировать (только свой) |
+| DELETE | /comments/:id | Удалить (свой или admin) |
+
+### Уведомления
+
+| Метод | Эндпоинт | Описание |
+|---|---|---|
+| GET | /notifications | Список уведомлений текущего пользователя |
+| PATCH | /notifications/:id/read | Пометить как прочитанное |
+| PATCH | /notifications/read-all | Прочитать все |
+
+### WebSocket-события
+
+| Событие | Описание |
+|---|---|
+| notification:new | Новое уведомление |
+| task:statusChanged | Смена статуса задачи |
+| task:assigned | Назначение задачи |
+
+---
+
+## Г. Схема БД (Prisma)
+
+```prisma
+model User {
+  id           String           @id @default(cuid())
+  email        String           @unique
+  password     String
+  firstName    String
+  lastName     String
+  role         Role             @default(EMPLOYEE)
+  avatar       String?
+  tasks        Task[]           @relation("TaskAssignee")
+  createdTasks Task[]           @relation("TaskAuthor")
+  comments     Comment[]
+  notifications Notification[]
+  memberships  ProjectMember[]
+}
+
+enum Role {
+  ADMIN
+  PROJECT_LEAD
+  EMPLOYEE
+}
+
+model Project {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  status      ProjectStatus   @default(PLANNING)
+  startDate   DateTime?
+  endDate     DateTime?
+  leadId      String
+  lead        User            @relation(fields: [leadId], references: [id])
+  tasks       Task[]
+  members     ProjectMember[]
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+model Task {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus     @default(BACKLOG)
+  priority    Priority       @default(MEDIUM)
+  deadline    DateTime?
+  tags        String[]
+  projectId   String
+  project     Project        @relation(fields: [projectId], references: [id])
+  assigneeId  String?
+  assignee    User?          @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  authorId    String
+  author      User           @relation("TaskAuthor", fields: [authorId], references: [id])
+  comments    Comment[]
+  attachments Attachment[]
+  history     TaskHistory[]
+}
+
+enum TaskStatus {
+  BACKLOG
+  PLANNED
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  text      String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  message   String
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  taskId    String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  DEADLINE_CHANGED
+  STATUS_CHANGED
+  NEW_COMMENT
+  DEADLINE_APPROACHING
+  OVERDUE
+}
+
+model Attachment {
+  id       String @id @default(cuid())
+  filename String
+  url      String
+  taskId   String
+  task     Task   @relation(fields: [taskId], references: [id])
+}
+
+model TaskHistory {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id])
+  field     String
+  oldValue  String?
+  newValue  String?
+  changedBy String
+  createdAt DateTime @default(now())
+}
+
+model ProjectMember {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, userId])
+}
+```
+
+---
+
+## Д. Требования к развёртыванию
+
+| Параметр | Значение |
+|---|---|
+| ОС | Linux (Ubuntu 22.04+) или Docker |
+| Node.js | 20+ LTS |
+| PostgreSQL | 15+ |
+| Минимум RAM | 1 GB (сервер) / 512 MB (бэкенд + БД) |
+| HTTPS | обязателен (Let's Encrypt) |
+| Домен | внутренний (tasks.nordflow.local) или внешний |
+
+### Docker Compose (базовая структура)
+
+```
+services:
+  api:
+    build: ./apps/api
+    ports: ["3000:3000"]
+    depends_on: [db]
+    environment:
+      DATABASE_URL: postgresql://user:pass@db:5432/nordflow
+      JWT_SECRET: <secret>
+  web:
+    build: ./apps/web
+    ports: ["80:80"]
+    depends_on: [api]
+  db:
+    image: postgres:15-alpine
+    volumes: [pgdata:/var/lib/postgresql/data]
+    environment:
+      POSTGRES_DB: nordflow
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+volumes:
+  pgdata:
+```
+
+---
+
+## Е. Примеры seed-данных
+
+### Пользователи
+
+| Имя | Роль | Email |
+|---|---|---|
+| Анна Волкова | ADMIN | volkova@nordflow.ru |
+| Максим Орлов | PROJECT_LEAD | orlov@nordflow.ru |
+| Елена Соколова | EMPLOYEE | sokolova@nordflow.ru |
+| Илья Морозов | EMPLOYEE | morozov@nordflow.ru |
+| Виктор Лебедев | EMPLOYEE | lebedev@nordflow.ru |
+| Ольга Крылова | EMPLOYEE | krylova@nordflow.ru |
+| Дмитрий Фролов | EMPLOYEE | frolov@nordflow.ru |
+| Мария Белова | EMPLOYEE | belova@nordflow.ru |
+
+### Проекты
+
+1. **GreenStone — Сайт** (ACTIVE, руководитель: Орлов)
+2. **Рекламная кампания NordFlow** (PLANNING, руководитель: Крылова)
+3. **Автоматизация отдела продаж** (ACTIVE, руководитель: Волкова)
+
+### Задачи (примеры)
+
+| # | Название | Проект | Статус | Приоритет | Исполнитель |
+|---|---|---|---|---|---|
+| 1 | Дизайн главной страницы | GreenStone | IN_PROGRESS | HIGH | Соколова |
+| 2 | Верстка главной | GreenStone | BACKLOG | MEDIUM | Морозов |
+| 3 | Интеграция CMS | GreenStone | PLANNED | HIGH | Лебедев |
+| 4 | Тестирование формы заявки | GreenStone | BACKLOG | LOW | Фролов |
+| 5 | Сбор данных по ЦА | Рекламная | IN_PROGRESS | MEDIUM | Белова |
+| 6 | Креативы для VK | Рекламная | PLANNED | HIGH | Соколова |
+| 7 | Таргетинг аудитории | Рекламная | BACKLOG | MEDIUM | Крылова |
+| 8 | API для интеграции CRM | Автоматизация | IN_PROGRESS | CRITICAL | Лебедев |
+| 9 | Парсинг заявок | Автоматизация | PLANNED | HIGH | Морозов |
+| 10 | Дашборд для руководителя | Автоматизация | BACKLOG | MEDIUM | Соколова |
