@@ -108,12 +108,14 @@ export default function ProjectPage({ projectId, onNavigate, onBack }: Props) {
                         draggable
                         onDragStart={() => handleDragStart(t.id)}
                         onDragEnd={handleDragEnd}
+                        onClick={() => onNavigate({ type: 'task', id: t.id })}
+                        style={{ cursor: 'pointer' }}
                       >
                         <div className="card-header">
                           <span className={`badge badge-${t.priority}`} style={{ fontSize: 10, padding: '2px 6px' }}>{PRIORITY_LABELS[t.priority]}</span>
                           {canDelete && <button className="btn btn-ghost btn-sm" style={{ fontSize: 12, padding: '0 4px', color: 'var(--text-tertiary)' }} onClick={(e) => { e.stopPropagation(); handleDeleteTask(t.id); }}>&times;</button>}
                         </div>
-                        <div className="card-title" onClick={() => onNavigate({ type: 'task', id: t.id })}>NDF-{t.number} {t.title}</div>
+                        <div className="card-title">NDF-{t.number} {t.title}</div>
                         <div className="card-footer">
                           <div className="card-meta">
                             {t.deadline && <span className={isOverdue ? 'overdue' : ''}>{new Date(t.deadline).toLocaleDateString('ru-RU')}</span>}
