@@ -18,7 +18,7 @@ export default function LoginPage() {
     <div className="login-page">
       <div className="login-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-          <img src="/logo_main.jpg" alt="NordFlow" style={{ width: 48, height: 48, borderRadius: 10, objectFit: 'cover' }} />
+          <img src="/logo_icon.jpg" alt="NordFlow" style={{ width: 48, height: 48, borderRadius: 10, objectFit: 'cover' }} />
           <h1>NordFlow Tasks</h1>
         </div>
         {error && <div className="login-error">{error}</div>}
