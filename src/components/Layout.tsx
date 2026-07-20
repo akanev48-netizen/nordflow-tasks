@@ -56,7 +56,7 @@ export default function Layout() {
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/logo_icon.jpg" alt="NordFlow" style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover' }} />
+            <img src="/logo_icon.jpg?v=2" alt="NordFlow" style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover' }} />
             <h2>NordFlow Tasks</h2>
           </div>
           <div className="role-badge">{api.getUser(user!.id)?.role === 'admin' ? 'Администратор' : api.getUser(user!.id)?.role === 'project_lead' ? 'Руководитель' : 'Сотрудник'}</div>
